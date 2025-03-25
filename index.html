@@ -75,26 +75,70 @@
 
     <script>
         document.getElementById('saveContactBtn').addEventListener('click', function() {
-            // Create a VCard
-            const vcard = new vCard();
-            vcard.set('fn', 'Lands Market LLC');
-            vcard.set('tel', '(859) 329-9214');
-            vcard.set('email', 'landsmarketky@gmail.com');
-            
-            // Add social media links
-            vcard.set('url', [
-                'https://www.facebook.com/LandsMarketLLC',
-                'https://www.instagram.com/landsmarketky',
-                'http://www.landsmarketky.com'
-            ]);
+            // Create contact information
+            const contact = {
+                name: 'Lands Market LLC',
+                phone: '(859) 329-9214',
+                email: 'landsmarketky@gmail.com',
+                urls: [
+                    'https://www.facebook.com/LandsMarketLLC',
+                    'https://www.instagram.com/landsmarketky',
+                    'http://www.landsmarketky.com'
+                ]
+            };
 
-            // Generate and download VCF file
+            // Create VCard
+            const vcard = new vCard();
+            vcard.set('fn', contact.name);
+            vcard.set('tel', contact.phone);
+            vcard.set('email', contact.email);
+            vcard.set('url', contact.urls);
+
+            // Generate VCF content
             const vcfContent = vcard.getOutput();
-            const blob = new Blob([vcfContent], {type: 'text/vcard'});
-            const link = document.createElement('a');
-            link.href = URL.createObjectURL(blob);
-            link.download = 'contact.vcf';
-            link.click();
+
+            // Check for mobile device and use appropriate method
+            if (navigator.contacts && navigator.contacts.save) {
+                // For devices with native contact API (some mobile browsers)
+                const contactInfo = {
+                    displayName: contact.name,
+                    phoneNumbers: [{ type: 'mobile', value: contact.phone }],
+                    emails: [{ type: 'work', value: contact.email }],
+                    urls: contact.urls.map(url => ({ type: 'profile', value: url }))
+                };
+
+                navigator.contacts.save(contactInfo, 
+                    () => alert('Contact saved successfully!'),
+                    error => alert('Error saving contact: ' + error)
+                );
+            } else {
+                // Fallback for most devices - download VCF file
+                const blob = new Blob([vcfContent], {type: 'text/vcard'});
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(blob);
+                link.download = 'lands-market-contact.vcf';
+                
+                // Append to body, click, and remove
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+
+                // Show user guidance
+                alert('Contact file downloaded. Please save to your contacts.');
+            }
+        });
+
+        // Detect if the page is opened on a mobile device
+        function isMobileDevice() {
+            return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        }
+
+        // Show different messages based on device
+        window.addEventListener('load', function() {
+            const saveButton = document.getElementById('saveContactBtn');
+            if (!isMobileDevice()) {
+                saveButton.textContent = 'Download Contact File';
+            }
         });
     </script>
 </body>
